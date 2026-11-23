@@ -1,5 +1,10 @@
 # PHP Dollar Highlight
 
+[![release](https://img.shields.io/github/v/release/mzeahmed/php-dollar-highlight)](https://github.com/mzeahmed/php-dollar-highlight/releases)
+[![build](https://img.shields.io/github/actions/workflow/status/mzeahmed/php-dollar-highlight/release.yml)](https://github.com/mzeahmed/php-dollar-highlight/actions/workflows/release.yml)
+[![license](https://img.shields.io/github/license/mzeahmed/php-dollar-highlight)](https://github.com/mzeahmed/php-dollar-highlight/blob/main/LICENSE)
+[![PhpStorm](https://img.shields.io/badge/PhpStorm-2026.2%2B-blue)](https://www.jetbrains.com/phpstorm/)
+
 A PhpStorm plugin that colors **only the `$` sign** of PHP variables, independently from the variable name.
 Files are never modified: only their display changes, and the rest of your theme's highlighting is kept.
 
@@ -100,3 +105,7 @@ highlighted `TextRange` is exactly one `$` character.
   an escaped `\$` is not.
 - `$` in PHPDoc comments is not colored (tested). Heredoc/nowdoc behavior is not covered by the tests.
 - The rendering was checked manually in PhpStorm 2026.2 only; other IDEs and versions are untested.
+
+## License
+
+[MIT](LICENSE)
