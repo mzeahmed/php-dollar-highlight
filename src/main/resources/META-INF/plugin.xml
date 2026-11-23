@@ -1,0 +1,27 @@
+<idea-plugin>
+    <id>dev.phpdollar.highlight</id>
+    <name>PHP Dollar Highlight</name>
+    <vendor>PHP Dollar Highlight</vendor>
+    <description><![CDATA[
+        Colors only the <code>$</code> sign of PHP variables, independently from the variable name.
+        The color is customizable in <i>Settings | Editor | Color Scheme | PHP Dollar Highlight</i>.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.jetbrains.php</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <annotator language="PHP" implementationClass="dev.phpdollar.DollarAnnotator"/>
+        <additionalTextAttributes scheme="Default" file="colorSchemes/PhpDollarDefault.xml"/>
+        <additionalTextAttributes scheme="Darcula" file="colorSchemes/PhpDollarDarcula.xml"/>
+        <intentionAction>
+            <language>PHP</language>
+            <className>dev.phpdollar.DollarColorIntention</className>
+            <category>PHP</category>
+        </intentionAction>
+        <colorSettingsPage implementation="dev.phpdollar.DollarColorSettingsPage"/>
+        <applicationService serviceImplementation="dev.phpdollar.DollarSettings"/>
+        <applicationConfigurable parentId="tools" instance="dev.phpdollar.DollarConfigurable"
+                                 id="dev.phpdollar.settings" displayName="PHP Dollar Highlight"/>
+    </extensions>
+</idea-plugin>
