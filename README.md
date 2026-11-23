@@ -1,82 +1,102 @@
 # PHP Dollar Highlight
 
-Plugin PhpStorm qui colore **uniquement le symbole `$`** des variables PHP, indépendamment du nom de la variable.
-Le fichier n'est jamais modifié : seul l'affichage change. Le reste de la coloration du thème est conservé.
+A PhpStorm plugin that colors **only the `$` sign** of PHP variables, independently from the variable name.
+Files are never modified: only their display changes, and the rest of your theme's highlighting is kept.
 
 ```php
-$user = $repository->find($id);     // seuls les « $ » sont colorés (défaut #C792EA)
+$user = $repository->find($id);     // only the "$" signs are colored (default #C792EA)
 $this->service->execute($_POST);
-$$dynamic = ${$other};              // les deux « $ » de $$x et le « $ » de ${ sont colorés
-$text = 'Le prix est de $100';      // chaîne littérale : non colorée
-// $commentaire                     // commentaire : non coloré
+$$dynamic = ${$other};              // both "$" of $$x and the "$" of ${ are colored
+$text = 'The price is $100';        // string literal: not colored
+// $comment                         // comment: not colored
 ```
 
-## Approche technique
+## How it works
 
-Dans le lexer PHP de PhpStorm, `$nom` est **un seul token** `PhpTokenTypes.VARIABLE` ; `$$x` et `${` produisent
-des tokens `DOLLAR` / `DOLLAR_LBRACE` sous un `Variable`. Le plugin utilise donc un `Annotator` silencieux
-(`newSilentAnnotation(INFORMATION)`) qui pose un `TextAttributesKey` sur un `TextRange` d'**un seul caractère**.
+In PhpStorm's PHP lexer, `$name` is **a single token**, `PhpTokenTypes.VARIABLE`; `$$x` and `${` produce
+`DOLLAR` / `DOLLAR_LBRACE` tokens under a `Variable`. The plugin therefore uses a silent `Annotator`
+(`newSilentAnnotation(INFORMATION)`) that applies a `TextAttributesKey` to a **one-character `TextRange`**.
 
-- Fonctionne par token (feuille PSI) : coût O(1) par élément, aucun parcours du document, incrémental par nature.
-- L'attribut est *foreground seul*, sans clé de repli : gras/italique/fond du thème restent intacts.
-- Les `$` des commentaires et chaînes littérales ne sont jamais des tokens `VARIABLE` → jamais colorés.
-- Aucune API interne ni dépréciée (vérifié avec le Plugin Verifier).
+- Works per token (PSI leaf): O(1) per element, never walks the document, incremental by nature.
+- The attribute is foreground-only with no fallback key: the theme's bold/italic/background are left intact.
+- `$` inside comments and string literals are never `VARIABLE` tokens, so they are never colored.
+- Only public IntelliJ Platform APIs are used. The single exception is the `TextAttributesKey` constructor with
+  default attributes, which the platform flags as deprecated but which is the only way to get a default color that
+  works with every color scheme (third-party themes don't define this plugin's key).
 
-Pourquoi pas un `SyntaxHighlighter` : celui de PHP est fourni par PhpStorm et ne peut pas être étendu pour scinder un token.
+Why not a `SyntaxHighlighter`: PHP's one is provided by PhpStorm and cannot be extended to split a token.
 
-## Versions prises en charge
+## Supported versions
 
-PhpStorm **2026.2 (build 262)** et supérieures (`sinceBuild = 262`, sans `untilBuild`).
-Testé/vérifié uniquement avec le build **PS-262.12573.41**. Les versions antérieures ne sont pas supportées (JBR 25 requis par la plateforme).
+PhpStorm **2026.2 (build 262)** and later (`sinceBuild = 262`, no `untilBuild`).
+Verified with build **PS-262.12573.41** only. Earlier versions are not supported (the platform requires JBR 25).
 
-## Prérequis
+## Requirements
 
-- JDK 25 (PhpStorm 2026.2 embarque JBR 25).
-- Gradle 9+ (le wrapper `./gradlew` fournit Gradle 9.9.2).
+- JDK 25 (PhpStorm 2026.2 ships with JBR 25).
+- Gradle 9+ (the `./gradlew` wrapper provides Gradle 9.9.2).
 
-## Compilation
+## Build
 
 ```bash
-# Avec un PhpStorm installé (aucun téléchargement du SDK) :
-./gradlew buildPlugin -PlocalIde=/chemin/vers/PhpStorm
-# Ou en téléchargeant PhpStorm automatiquement :
+# With an installed PhpStorm (no SDK download):
+./gradlew buildPlugin -PlocalIde=/path/to/PhpStorm
+# Or let Gradle download PhpStorm:
 ./gradlew buildPlugin
 
-./gradlew test             # tests automatisés
+./gradlew test             # automated tests
 ./gradlew verifyPlugin     # JetBrains Plugin Verifier
 ```
 
-Le ZIP est généré dans `build/distributions/php-dollar-highlight-0.1.0.zip`.
-Si votre `~/.gradle/gradle.properties` force un autre JDK : ajoutez `-Dorg.gradle.java.home=/usr/lib/jvm/java-25-openjdk-amd64`.
+A `Makefile` wraps these commands (`make help`).
+
+The ZIP is written to `build/distributions/php-dollar-highlight-<version>.zip`.
+If your `~/.gradle/gradle.properties` forces another JDK, add `-Dorg.gradle.java.home=/usr/lib/jvm/java-25-openjdk-amd64`.
+
+## Release (GitHub Actions)
+
+Pushing a `vX.Y.Z` tag triggers `.github/workflows/release.yml`: tests, build, then a GitHub Release is created with
+the installable ZIP (`php-dollar-highlight-X.Y.Z.zip`) attached. The plugin version is taken from the tag.
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
 
 ## Installation
 
-`Settings → Plugins → ⚙ → Install Plugin from Disk…` → choisir le ZIP → redémarrer si l'IDE le demande
-(le Verifier indique que le plugin est rechargeable sans redémarrage).
+Download the ZIP (from a GitHub Release or from your own build), then in PhpStorm:
+`Settings → Plugins → ⚙ → Install Plugin from Disk…` → select the ZIP → restart if the IDE asks
+(the Plugin Verifier reports that the plugin can be loaded without a restart).
 
 ## Configuration
 
-- **Couleur depuis l'éditeur** : placez le curseur juste avant un `$`, `Alt+Entrée` → *Change the color of the $ sign…* → choisissez la couleur ; appliquée immédiatement et mémorisée. Cette couleur **prend le dessus** sur celle du schéma ; `Settings → Tools → PHP Dollar Highlight → Reset custom color` revient au schéma. (Le schéma intégré, ex. Darcula, est en lecture seule : l'API publique ne permet pas de le modifier proprement, d'où ce réglage propre au plugin.)
-- **Couleur via le schéma** : `Settings → Editor → Color Scheme → PHP Dollar Highlight` (aperçu intégré). « Restore defaults »
-  du schéma rétablit `#C792EA`. Valeurs par défaut fournies pour les thèmes Default et Darcula ; appliquées sans redémarrage.
-- **Activer/désactiver** : `Settings → Tools → PHP Dollar Highlight` (persistant, appliqué sans redémarrage).
+- **Color from the editor**: put the caret right before a `$`, press `Alt+Enter` →
+  *Change the color of the $ sign…* → pick a color. It applies immediately and is saved. This color **takes
+  precedence** over the color scheme; `Settings → Tools → PHP Dollar Highlight → Reset custom color` goes back to the
+  scheme. (Built-in schemes such as Darcula are read-only and the public API doesn't allow editing them cleanly, hence
+  this plugin-level setting.)
+- **Color from the color scheme**: `Settings → Editor → Color Scheme → PHP Dollar Highlight` (with a built-in preview).
+  The scheme's "Restore defaults" brings back `#C792EA`. Defaults work with any scheme and apply without a restart.
+- **Enable/disable**: `Settings → Tools → PHP Dollar Highlight` (persistent, applied without a restart).
 
-Choix : la page `PHP` du Color Scheme est fournie par PhpStorm et n'est pas extensible par API publique ; une page
-sœur est donc utilisée pour la couleur, et une page Tools pour l'interrupteur (un `ColorSettingsPage` n'a pas de case à cocher).
+Why two pages: the `PHP` page of the Color Scheme settings belongs to PhpStorm and cannot be extended through the
+public API, so a sibling page is used for the color and a Tools page for the on/off switch (a `ColorSettingsPage`
+has no checkbox).
 
-## Désinstallation
+## Uninstallation
 
 `Settings → Plugins → Installed → PHP Dollar Highlight → Uninstall`.
 
 ## Tests
 
-`DollarAnnotatorTest` (15 tests, sur le vrai moteur de highlighting PHP) : variables locales, paramètres, propriétés,
-superglobales, `$this`, variables dynamiques, chaînes, regex, commentaires, chaînes interpolées, activation/désactivation,
-couleur personnalisée, nom de variable intact. Chaque test vérifie que le `TextRange` fait exactement 1 caractère `$`.
+`DollarAnnotatorTest` (16 tests, run against the real PHP highlighting engine): local variables, parameters,
+properties, superglobals, `$this`, dynamic variables, strings, regexes, comments, interpolated strings,
+enable/disable, custom color, variable name left untouched, intention availability. Each test checks that the
+highlighted `TextRange` is exactly one `$` character.
 
-## Limitations connues
+## Known limitations
 
-- Dans les chaînes interpolées, `"$name"`, `"{$obj->p}"` et `"${name}"` sont colorés (ce sont de vraies variables) ;
-  un `$` échappé (`\$`) ne l'est pas.
-- Les `$` des commentaires PHPDoc ne sont pas colorés (testé). Heredoc/nowdoc : comportement non couvert par les tests.
-- Non testé manuellement dans l'interface graphique de PhpStorm ; seuls les tests automatisés et le Plugin Verifier ont été exécutés.
+- In interpolated strings, `"$name"`, `"{$obj->p}"` and `"${name}"` are colored (they are real variables);
+  an escaped `\$` is not.
+- `$` in PHPDoc comments is not colored (tested). Heredoc/nowdoc behavior is not covered by the tests.
+- The rendering was checked manually in PhpStorm 2026.2 only; other IDEs and versions are untested.
